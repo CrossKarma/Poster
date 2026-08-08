@@ -1,0 +1,1793 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poster - AI listing copy and uploads for YouTube creators</title>
+<meta name="description" content="Poster watches your video, reads your channel analytics and what is trending, then writes the title, description, hashtags and captions and uploads to your YouTube channel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="light"] {
+  --bg:#f7f4ee; --panel:#ffffff; --sunk:#f2eee6; --line:#e5ddd0; --line-soft:#efe9de;
+  --text:#2b2723; --dim:#8a8175; --faint:#b3aa9c;
+  --accent:#b4643a; --accent-deep:#9a5330; --accent-soft:#f8ece3;
+  --good:#4f7a52; --good-soft:#eaf1ea; --bad:#b04a42; --bad-soft:#f7ebe9;
+  --rail:#fbf9f5;
+  --shadow:0 1px 2px rgba(60,50,40,.04),0 8px 24px rgba(60,50,40,.05);
+  --shadow-lift:0 2px 4px rgba(60,50,40,.05),0 14px 34px rgba(60,50,40,.09);
+}
+:root[data-theme="dark"] {
+  --bg:#171512; --panel:#211e1a; --sunk:#1b1916; --line:#353027; --line-soft:#2a2620;
+  --text:#ece5da; --dim:#9b9186; --faint:#6e675e;
+  --accent:#d98b5c; --accent-deep:#e19a6e; --accent-soft:#2e2620;
+  --good:#7da77f; --good-soft:#212b22; --bad:#d2776d; --bad-soft:#32211f;
+  --rail:#1c1a16;
+  --shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.25);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.3),0 14px 34px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- app shell: rail + main ---------- */
+.shell{display:flex;min-height:100vh}
+.rail{flex:none;width:212px;background:var(--rail);border-right:1px solid var(--line);
+  padding:22px 12px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh}
+.rail-mark{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:24px;
+  letter-spacing:-.02em;padding:0 12px 16px}
+.rail-mark em{font-style:normal;color:var(--accent)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;background:none;border:none;
+  border-radius:10px;padding:9px 12px;font-size:14px;font-weight:500;color:var(--dim);
+  cursor:pointer;text-align:left;transition:background .1s,color .1s}
+.nav button:hover{background:var(--sunk);color:var(--text)}
+.nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav button svg{flex:none;width:17px;height:17px;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav button .n{margin-left:auto;min-width:19px;text-align:center;padding:0 6px;border-radius:999px;
+  background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;line-height:18px}
+.nav button.on .n{background:var(--accent)}
+.rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:2px}
+.rail-user{padding:8px 12px;font-size:12px;color:var(--faint);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main{flex:1;min-width:0;padding:26px 30px 120px}
+.main-inner{max-width:780px;margin:0 auto}
+.mhead{display:flex;align-items:baseline;gap:14px;margin-bottom:20px}
+.mhead h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:27px;
+  letter-spacing:-.02em;margin:0;line-height:1.15}
+.mhead .sub{color:var(--dim);font-size:13.5px}
+
+/* mobile: rail becomes bottom bar */
+@media (max-width:820px){
+  .shell{display:block}
+  .rail{width:auto;height:auto;position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;
+    flex-direction:row;align-items:center;padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-right:none;border-top:1px solid var(--line);gap:0}
+  .rail-mark,.rail-user{display:none}
+  .nav{flex-direction:row;flex:1;gap:0}
+  .nav button{flex-direction:column;gap:3px;padding:6px 2px;font-size:10px;justify-content:center;
+    align-items:center;text-align:center;border-radius:9px}
+  .nav button svg{width:19px;height:19px}
+  .nav button .n{position:absolute;transform:translate(14px,-6px);margin:0}
+  .nav button{position:relative}
+  .rail-foot{margin:0}
+  .rail-foot button{padding:6px 8px}
+  .rail-foot button span{display:none}
+  .main{padding:20px 16px 150px}
+}
+
+/* ---------- shared bits ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:22px 24px;margin-bottom:16px;box-shadow:var(--shadow)}
+h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:18px;margin:0 0 4px;letter-spacing:-.01em}
+.lede{color:var(--dim);font-size:13.5px;margin:0 0 16px}
+.sect{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);margin:22px 0 8px}
+.sect:first-child{margin-top:0}
+label.lab{display:block;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:5px}
+input[type=text],textarea{width:100%;background:var(--sunk);border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;font-size:14px;outline:none;margin-bottom:12px}
+textarea{min-height:74px;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+select,input[type=time]{background:var(--sunk);border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;font-size:14px;outline:none;color:var(--text);width:100%}
+input[type=datetime-local]{background:var(--sunk);border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;font-size:14px;outline:none;color:var(--text);margin-bottom:12px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;
+  font-weight:600;font-size:14px;cursor:pointer;transition:background .1s}
+.btn:hover{background:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--sunk);border-color:var(--dim)}
+.btn.big{padding:13px 26px;font-size:15px}
+.btn.mini{padding:5px 12px;font-size:12.5px;border-radius:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+  border-radius:999px;padding:5px 13px;font-size:12.5px;color:var(--dim);cursor:pointer}
+.pill:hover{border-color:var(--dim)}
+.pill.solid{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.banner{border:1px solid var(--line);background:var(--accent-soft);border-radius:12px;
+  padding:11px 15px;font-size:13.5px;margin-bottom:16px}
+.stat{font-size:13px;color:var(--dim)}
+.ok{color:var(--good)} .err{color:var(--bad)}
+.bar{height:7px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:10px 0}
+.bar>i{display:block;height:100%;width:0%;background:var(--accent);transition:width .2s}
+.copyrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tagline{font-size:12.5px;color:var(--dim);margin:-6px 0 12px}
+footer{color:var(--faint);font-size:12px;text-align:center;margin-top:44px}
+footer a{color:var(--faint)}
+
+/* drop zone */
+.drop{border:1.5px dashed var(--line);border-radius:14px;padding:34px 20px;text-align:center;
+  color:var(--dim);cursor:pointer;transition:border-color .15s,background .15s;background:var(--sunk)}
+.drop.hot,.drop:hover{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+
+/* settings grid */
+.setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:4px}
+
+/* video rows */
+.vrow{display:flex;gap:11px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line-soft)}
+.vrow:last-child{border-bottom:none}
+.vthumb{flex:none;width:60px;height:34px;object-fit:cover;border-radius:7px;border:1px solid var(--line);background:var(--sunk)}
+.vmid{flex:1;min-width:0}
+.vtitle{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsub{font-size:11.5px;color:var(--dim);display:flex;gap:8px;align-items:center}
+.vright{flex:none;text-align:right;line-height:1.35}
+.vlabel{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.vlabel.good{color:var(--good)}
+.vtime{font-size:11.5px;color:var(--dim)}
+.vrow.dup,.job.dup{border:1px solid var(--bad);background:var(--bad-soft);border-radius:10px}
+.vrow.dup{padding-left:9px;padding-right:9px;margin:3px 0}
+.dupnote{font-size:10.5px;font-weight:700;color:var(--bad);text-transform:uppercase;letter-spacing:.05em}
+.badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+  background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:0 5px;line-height:16px}
+.xmini{display:inline-flex;gap:4px}
+.xmini button{background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--dim);
+  font-size:10px;font-weight:600;padding:0 6px;line-height:17px;cursor:pointer}
+.xmini button.done{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.rowx{background:none;border:none;color:var(--faint);cursor:pointer;font-size:15px;padding:0 3px;flex:none}
+.rowx:hover{color:var(--bad)}
+.sched-empty{color:var(--dim);font-size:13.5px}
+details.day{border-bottom:1px solid var(--line-soft)}
+details.day:last-child{border-bottom:none}
+details.day summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;
+  padding:9px 0;font-size:13px;font-weight:600;color:var(--dim)}
+details.day summary::-webkit-details-marker{display:none}
+details.day summary .arrow{transition:transform .12s;font-size:10px}
+details.day[open] summary .arrow{transform:rotate(90deg)}
+details.day summary .cnt{margin-left:auto;font-weight:400;font-size:12px}
+
+/* weekly schedule editor */
+.wday{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
+.wday:last-child{border-bottom:none}
+.wname{width:40px;font-size:11.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;flex:none}
+.wtimes{flex:1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wtimes .off{font-size:12px;color:var(--faint)}
+.wchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;
+  border:1px solid var(--line);border-radius:999px;background:var(--sunk)}
+.wchip b{cursor:pointer;color:var(--dim);font-weight:700}
+.wchip b:hover{color:var(--bad)}
+.wday input[type=time]{width:96px;padding:4px 6px;font-size:12px;flex:none}
+.wadd{flex:none;font-size:12px;padding:4px 10px}
+
+/* queue job cards */
+.job{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:var(--panel);
+  overflow:hidden;box-shadow:var(--shadow)}
+.job-head{display:flex;gap:11px;align-items:center;padding:10px 14px;cursor:pointer}
+.job-head:hover{background:var(--sunk)}
+.job-state{flex:none;font-size:12px;color:var(--dim)}
+.job-state.ok{color:var(--good)} .job-state.err{color:var(--bad)}
+.job-body{padding:6px 18px 18px;border-top:1px solid var(--line-soft)}
+
+/* thumbnail picker */
+.tframes{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.tframes img{width:96px;height:54px;object-fit:cover;border-radius:8px;border:2px solid var(--line);cursor:pointer}
+.tframes img.sel{border-color:var(--accent)}
+.tcustom{width:96px;height:54px;border-radius:8px;border:2px dashed var(--line);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim);text-align:center}
+.tcustom.sel{border-color:var(--accent);border-style:solid;color:var(--accent)}
+
+/* segmented toggle */
+.seg{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 14px}
+.seg button{background:none;border:none;border-radius:999px;padding:6px 15px;font-size:13px;color:var(--dim);cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--text);border:1px solid var(--line);font-weight:600;box-shadow:var(--shadow)}
+.seg-note{font-size:12.5px;color:var(--dim);margin:-8px 0 12px}
+.aprow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.aprow .lab{margin:0}
+
+/* ideas */
+.idea{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:14px}
+.idea:last-child{border-bottom:none}
+.idea input[type=checkbox]{margin-top:5px;accent-color:var(--accent)}
+.idea .txt{flex:1}
+.idea.done .txt{color:var(--faint);text-decoration:line-through}
+.idea .del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px}
+.idea .del:hover{color:var(--bad)}
+.idea-add{display:flex;gap:8px}
+.idea-add input{flex:1;margin-bottom:0}
+.advice{margin-top:14px}
+.advice .head{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:16px;margin-bottom:10px}
+.advice .tip{border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:9px;background:var(--sunk)}
+.advice .tip b{display:block;font-size:13.5px;margin-bottom:2px}
+.advice .tip span{font-size:13.5px;color:var(--dim)}
+
+/* analysis */
+.ana h4{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:15px;margin:18px 0 6px}
+.ana ul{margin:0;padding-left:20px;color:var(--dim);font-size:14px}
+.ana li{margin:3px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.chip{background:var(--accent-soft);color:var(--accent);border:1px solid var(--line);
+  border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:500;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.since{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--sunk);
+  border-radius:10px;padding:12px 15px;margin-top:8px}
+.since b{display:block;font-size:12px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--accent);margin-bottom:5px}
+.since ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--dim)}
+.wline{font-size:14px;margin-top:6px}
+.wline b{color:var(--accent);font-weight:600}
+.vrow.click{cursor:pointer}
+.vrow.click:hover{background:var(--sunk)}
+.vrow.open{border-bottom:none}
+.vdetail{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;
+  background:var(--sunk);border:1px solid var(--line);border-radius:12px;
+  padding:14px;margin:2px 0 10px}
+.vdetail img{width:168px;height:94px;object-fit:cover;border-radius:9px;border:1px solid var(--line);flex:none}
+.vdetail .vd-main{flex:1;min-width:200px}
+.vdetail .vd-title{font-size:14px;font-weight:600;margin-bottom:6px}
+.vdetail .vd-stats{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+.vdetail .vd-stat b{display:block;font-size:16px;font-family:Fraunces,Georgia,serif;font-weight:600;line-height:1.2}
+.vdetail .vd-stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.vdetail .vd-meta{font-size:12.5px;color:var(--dim);margin-bottom:8px}
+.vdetail .vd-desc{font-size:12.5px;color:var(--dim);white-space:pre-wrap;margin-bottom:10px;
+  max-height:76px;overflow:hidden}
+.vdetail a.btn.mini{text-decoration:none;display:inline-block}
+
+/* ---------- landing ---------- */
+.wrap{max-width:840px;margin:0 auto;padding:26px 24px 60px}
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.mark{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:30px;letter-spacing:-.02em;margin:0;line-height:1}
+.mark em{font-style:normal;color:var(--accent)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hero{padding:56px 20px 40px;text-align:center}
+.hero h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:46px;letter-spacing:-.02em;margin:0 0 12px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--dim);font-size:16.5px;max-width:560px;margin:0 auto 26px}
+.price{font-size:13px;color:var(--dim);margin-top:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.feat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px 14px;box-shadow:var(--shadow)}
+.feat h3{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:16px;margin:0 0 6px}
+.feat p{color:var(--dim);font-size:13.5px;margin:0}
+.steps{counter-reset:step;margin:0;padding:0;list-style:none}
+.steps li{counter-increment:step;display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(step);flex:none;width:26px;height:26px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:13px;
+  display:flex;align-items:center;justify-content:center;margin-top:3px}
+.steps b{display:block}
+.steps span{color:var(--dim);font-size:13.5px}
+.pricing{text-align:center;padding:26px 22px}
+.pricing .amount{font-family:Fraunces,Georgia,serif;font-size:38px;font-weight:600}
+.pricing .amount small{font-size:15px;color:var(--dim);font-weight:400}
+.pricing ul{list-style:none;padding:0;margin:14px auto 20px;max-width:330px;text-align:left;color:var(--dim);font-size:14px}
+.pricing li{padding:4px 0 4px 22px;position:relative}
+.pricing li::before{content:"";position:absolute;left:0;top:12px;width:9px;height:9px;border-radius:50%;background:var(--good)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- signed out: public landing -->
+  <div id="landing" class="hidden">
+    <div class="top">
+      <h1 class="mark">Post<em>er</em></h1>
+      <div class="top-right">
+        <span class="pill solid" onclick="location.href='/login'">Sign in with YouTube</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h1>Your videos, <em>listed properly</em>, in one drop.</h1>
+      <p>Poster is an AI assistant for YouTube creators. Drop in a video and it
+         watches the frames, checks how your channel has been performing and what
+         is trending right now, then writes the title, description, hashtags and
+         captions and uploads straight to your channel.</p>
+      <button class="btn big" onclick="location.href='/login'">Start your free trial</button>
+      <div class="price">7-day free trial, then $10/month. Cancel anytime.</div>
+    </div>
+
+    <div class="grid">
+      <div class="feat">
+        <h3>Watches the video itself</h3>
+        <p>Frames are sampled in your browser and read by AI, so the copy describes what is actually on screen, not a guess from the file name.</p>
+      </div>
+      <div class="feat">
+        <h3>Learns from your channel</h3>
+        <p>With your permission, Poster reads your recent uploads and their views and likes through the YouTube API, and leans toward what already works for you.</p>
+      </div>
+      <div class="feat">
+        <h3>Checks what is trending</h3>
+        <p>Current trending videos and the tags they use feed into your titles and hashtags, so your listing speaks today's language.</p>
+      </div>
+      <div class="feat">
+        <h3>Shorts or long form, sorted</h3>
+        <p>Poster detects whether your file is a Short or a regular video and writes for that format. You can override it with one tap.</p>
+      </div>
+      <div class="feat">
+        <h3>Uploads with your account</h3>
+        <p>The video goes from your browser straight to YouTube with your own sign-in. Your files never sit on our servers.</p>
+      </div>
+      <div class="feat">
+        <h3>Cross-posts in seconds</h3>
+        <p>Ready-made captions for TikTok, Instagram and X, copied to your clipboard with the upload page opened for you.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><div><b>Sign in with your YouTube account</b><span>Google's own sign-in. Poster asks for upload access and read access to your channel, nothing else.</span></div></li>
+        <li><div><b>Drop a video in</b><span>Poster samples a few frames, detects Short or long form, and pulls your channel and trending context.</span></div></li>
+        <li><div><b>Review and upload</b><span>Edit anything you like, hit upload, then cross-post to TikTok, Instagram and X.</span></div></li>
+      </ol>
+    </div>
+
+    <div class="card pricing">
+      <h2>One plan, no tiers</h2>
+      <div class="amount">$10<small> /month</small></div>
+      <ul>
+        <li>7-day free trial, no card needed to start</li>
+        <li>AI titles, descriptions, hashtags and captions</li>
+        <li>Channel analytics and trending baked into every listing</li>
+        <li>Direct upload to your YouTube channel</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <button class="btn big" onclick="location.href='/login'">Sign in with YouTube</button>
+    </div>
+
+    <footer>
+      Poster uses YouTube API Services. By signing in you agree to the
+      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a>.
+      Read our <a href="/privacy.html">Privacy Policy</a> and the
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.
+    </footer>
+  </div>
+
+  <!-- signed in -->
+</div>
+
+<div id="appview" class="shell hidden">
+  <aside class="rail">
+    <div class="rail-mark">Post<em>er</em></div>
+    <nav class="nav" id="tabbar">
+      <button data-tab="queue" class="on" onclick="showTab('queue')">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+        Post<span class="n hidden" id="nQueue"></span></button>
+      <button data-tab="videos" onclick="showTab('videos')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
+        Videos<span class="n hidden" id="nSched"></span></button>
+      <button data-tab="insights" onclick="showTab('insights')">
+        <svg viewBox="0 0 24 24"><path d="M4 20h16M6 16v-5m6 5V8m6 8v-8"/></svg>
+        Insights</button>
+      <button data-tab="settings" onclick="showTab('settings')">
+        <svg viewBox="0 0 24 24"><path d="M4 8h10m4 0h2M4 16h2m4 0h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
+        Settings</button>
+    </nav>
+    <div class="rail-foot">
+      <div class="rail-user" id="railUser"></div>
+      <nav class="nav">
+        <button onclick="signOut()">
+          <svg viewBox="0 0 24 24"><path d="M15 12H4m0 0l3-3m-3 3l3 3"/><path d="M10 5V4a1 1 0 011-1h8a1 1 0 011 1v16a1 1 0 01-1 1h-8a1 1 0 01-1-1v-1"/></svg>
+          <span>Sign out</span></button>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main"><div class="main-inner">
+    <div class="mhead"><h1 id="pageTitle">Queue</h1><span class="sub" id="pageSub"></span></div>
+    <div id="trialBanner" class="banner hidden"></div>
+
+    <!-- QUEUE TAB -->
+    <div class="tab-page" id="tab-queue">
+      <div class="card">
+        <h2>New videos</h2>
+        <p class="lede">Drop one or several. Each becomes a card: open it, generate, tweak, upload.</p>
+        <div class="drop" id="drop">Drop videos here, or click to choose</div>
+        <input type="file" id="file" accept="video/*" multiple class="hidden">
+        <input type="file" id="thumbFile" accept="image/png,image/jpeg" class="hidden">
+        <div class="aprow" style="margin-top:14px">
+          <label class="lab">Autopilot</label>
+          <div class="seg" style="margin:0">
+            <button id="apOff" onclick="setAutopilot('off')">Off</button>
+            <button id="apNow" onclick="setAutopilot('now')">Auto post</button>
+            <button id="apSched" onclick="setAutopilot('sched')">Auto schedule</button>
+          </div>
+        </div>
+        <div class="seg-note" id="apNote" style="margin:6px 0 0"></div>
+      </div>
+      <div id="queueList"></div>
+    </div>
+
+    <!-- VIDEOS TAB (scheduled + posted) -->
+    <div class="tab-page hidden" id="tab-videos">
+      <div class="card">
+        <h2>On your channel</h2>
+        <p class="lede">Live from YouTube. Tap any video to see all its numbers. Duplicates show in red.</p>
+        <div id="schedList" class="sched-empty">Loading your channel...</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn ghost mini" onclick="loadSchedule()">Refresh</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Posted through Poster</h2>
+        <p class="lede">Tap a video to open it on YouTube. T, I and X mark cross-posts. Cards fade out after your keep time.</p>
+        <div id="postedList" class="sched-empty">Loading...</div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS TAB (analysis + ideas) -->
+    <div class="tab-page hidden" id="tab-insights">
+      <div class="card">
+        <h2>Your channel right now</h2>
+        <p class="lede" id="anaLede">Your channel's full read stays right here. Hit Refresh whenever you want it rebuilt from fresh numbers.</p>
+        <div class="row">
+          <button class="btn ghost mini" id="anaBtn" onclick="analyzeChannel()">Refresh now</button>
+          <span class="stat" id="anaStat"></span>
+        </div>
+        <div id="anaOut" class="ana hidden"></div>
+      </div>
+      <div class="card">
+        <h2>Your posting week</h2>
+        <p class="lede">Two schedules: one for Shorts, one for normal videos. Autopilot drops each upload into the right one. Build both from your channel's real numbers or set them by hand.</p>
+        <div id="weekSched"></div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn" onclick="saveWeek()">Save week</button>
+          <button class="btn ghost" id="buildWeekBtn" onclick="bestFromChannel()">Build my week from my channel</button>
+          <span id="weekSaved" class="stat ok"></span>
+        </div>
+        <div class="seg-note" style="margin-top:8px">Build my week reads which days and hours actually perform for each format and fills both weeks from their own evidence, so Shorts can run daily while normal videos go out once or twice a week. Adjust anything, then Save week saves both.</div>
+      </div>
+      <div class="card">
+        <h2>Ideas</h2>
+        <p class="lede">Ready-to-paste AI video prompts built from your numbers.</p>
+        <div class="row" style="margin-bottom:14px">
+          <button class="btn ghost" id="ideaGenBtn" onclick="generateIdeas()">Generate a prompt</button>
+          <span class="stat" id="ideaStat"></span>
+        </div>
+        <div class="idea-add">
+          <input type="text" id="ideaText" placeholder="Add your own idea..." onkeydown="if(event.key==='Enter')addIdea()">
+          <button class="btn ghost" onclick="addIdea()">Add</button>
+        </div>
+        <div id="ideaList" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h2>Channel advice</h2>
+        <p class="lede">Plain-spoken pointers on growing, read straight from your channel.</p>
+        <div class="row">
+          <button class="btn ghost" id="advBtn" onclick="getAdvice()">Read my channel</button>
+          <span class="stat" id="advStat"></span>
+        </div>
+        <div id="adviceOut" class="advice hidden"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-page hidden" id="tab-settings">
+      <div class="card">
+        <div class="sect">Channels</div>
+        <div class="row" style="margin-bottom:14px">
+          <select id="chPick" style="width:auto;min-width:180px" onchange="switchChannel(this.value)"></select>
+          <button class="btn ghost mini" onclick="location.href='/login?add=1'">Add another channel</button>
+        </div>
+        <div class="seg-note" style="margin:-6px 0 14px">Posting, analysis and everything else runs on the channel picked here. Adding one takes you through Google's sign-in for that account.</div>
+        <div class="sect">Your channel</div>
+        <label class="lab">Your niche - what your channel makes</label>
+        <textarea id="niche" placeholder="Example: scary stories and horror clips, short unsettling moments, creepy 15 second scares."></textarea>
+        <div class="row" style="margin:6px 0 14px">
+          <button class="btn ghost mini" id="nicheBtn" onclick="autoNiche()">Fill this out for me</button>
+          <span class="stat" id="nicheStat"></span>
+        </div>
+        <div class="sect">Defaults</div>
+        <div class="setgrid">
+          <div>
+            <label class="lab">Default visibility</label>
+            <select id="setPrivacy">
+              <option value="public">Public</option>
+              <option value="unlisted">Unlisted</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+          <div>
+            <label class="lab">AI model</label>
+            <select id="setModel">
+              <option value="quality">Quality (slower)</option>
+              <option value="fast">Fast (lighter)</option>
+            </select>
+          </div>
+          <div>
+            <label class="lab">Keep posted cards for</label>
+            <select id="setRetention">
+              <option value="1">1 day</option>
+              <option value="2">2 days</option>
+              <option value="3">3 days</option>
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+              <option value="0">Forever</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn" onclick="saveSettings()">Save</button>
+          <span id="setSaved" class="stat ok"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="paywall" class="card hidden">
+      <h2>Trial ended</h2>
+      <p class="lede">Keep Poster for $10/month. Cancel anytime.</p>
+      <button class="btn" onclick="subscribe()">Subscribe</button>
+    </div>
+
+    <footer>Poster uploads with your own YouTube account. Your videos never sit on our servers.
+      <a href="/privacy.html">Privacy Policy</a></footer>
+  </div></main>
+</div>
+
+<script>
+let me = null;
+let bestTimes = [];
+let bestHours = [];
+let bestPerDay = 0;
+let bestWeek = null;
+let jobs = [];
+let jobSeq = 1;
+let autopilot = localStorage.getItem('poster_ap') || 'off';
+let chanKey = '';   // set at boot: keeps per-channel caches separate
+let sched = null;   // {shorts:{mon:["18:00"],...}, videos:{...}}
+const WEEK = ['mon','tue','wed','thu','fri','sat','sun'];
+const WEEKLBL = {mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+const TRACKS = ['shorts','videos'];
+const TRACKLBL = {shorts:'Shorts', videos:'Normal videos'};
+
+// ---------- boot + tabs ----------
+async function boot() {
+  const r = await fetch('/api/me');
+  me = await r.json();
+  if (!me.signedIn) {
+    document.getElementById('landing').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('appview').classList.remove('hidden');
+  document.getElementById('niche').value = me.niche || '';
+  const s = me.settings || {};
+  document.getElementById('setPrivacy').value = s.privacy || 'public';
+  document.getElementById('setModel').value = s.model || 'quality';
+  document.getElementById('setRetention').value = String(s.retention != null ? s.retention : 3);
+  sched = normalizeSched(s.schedule, s.postTime || '18:00', s.postsPerDay || 1);
+  renderWeek();
+  const actCh = (me.channels || []).find(ch => ch.active);
+  chanKey = actCh ? '_' + actCh.id : '';
+  try {
+    const bt = JSON.parse(localStorage.getItem('poster_besttimes' + chanKey) || 'null');
+    if (bt) { bestTimes = bt.times || []; bestHours = bt.hours || []; bestPerDay = bt.perDay || 0; bestWeek = bt.week || null; }
+  } catch (e) {}
+  if (!bestTimes.length && me.analysis) {
+    bestTimes = me.analysis.bestTimes || [];
+    bestHours = me.analysis.bestHours || [];
+    bestPerDay = me.analysis.postsPerDay || 0;
+  }
+  if (!bestWeek && me.analysis) bestWeek = weeksFrom(me.analysis);
+  cleanBest();
+  const ru = document.getElementById('railUser');
+  if (ru) ru.textContent = me.channel || me.email || '';
+  const cp = document.getElementById('chPick');
+  if (cp) {
+    const chans = me.channels || [];
+    cp.innerHTML = chans.map(c =>
+      '<option value="' + c.id + '"' + (c.active ? ' selected' : '') + '>'
+      + escapeHtml(c.title) + '</option>').join('');
+    cp.parentElement.style.display = chans.length ? '' : 'none';
+  }
+  try { showTab(localStorage.getItem('poster_tab') || 'queue'); } catch (e) {}
+  if (me.analysis) renderAnalysis(me.analysis);
+  const banner = document.getElementById('trialBanner');
+  if (me.status === 'dev') {
+    banner.textContent = 'Dev account: full access.';
+    banner.classList.remove('hidden');
+  } else if (me.status === 'trial') {
+    banner.textContent = 'Free trial: ' + me.trialDaysLeft + ' day' + (me.trialDaysLeft === 1 ? '' : 's') + ' left.';
+    banner.classList.remove('hidden');
+  } else if (me.status === 'expired') {
+    document.getElementById('paywall').classList.remove('hidden');
+  }
+  paintAutopilot();
+  loadSchedule();
+  loadPosted();
+  loadIdeas();
+  setInterval(loadPosted, 60000); // keep countdowns fresh
+}
+
+const TAB_META = {
+  queue:    ['Post', 'Drop a video in, Poster does the rest'],
+  videos:   ['Videos', 'Everything on and through your channel'],
+  insights: ['Insights', 'What your numbers say to do next'],
+  settings: ['Settings', 'Your channels and defaults']
+};
+const TAB_LEGACY = {schedule:'videos', posted:'videos', ideas:'insights', analysis:'insights'};
+function showTab(name) {
+  name = TAB_LEGACY[name] || name;
+  if (!TAB_META[name]) name = 'queue';
+  for (const b of document.querySelectorAll('#tabbar button'))
+    b.classList.toggle('on', b.dataset.tab === name);
+  for (const p of document.querySelectorAll('.tab-page'))
+    p.classList.toggle('hidden', p.id !== 'tab-' + name);
+  document.getElementById('pageTitle').textContent = TAB_META[name][0];
+  document.getElementById('pageSub').textContent = TAB_META[name][1];
+  try { localStorage.setItem('poster_tab', name); } catch (e) {}
+}
+function setBadge(id, n) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = n;
+  el.classList.toggle('hidden', !n);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtWhen(iso) {
+  try { return new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); }
+  catch (e) { return iso; }
+}
+function fmtTime(iso) {
+  try { return new Date(iso).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+  catch (e) { return ''; }
+}
+function ytThumb(id) { return id ? 'https://i.ytimg.com/vi/' + id + '/default.jpg' : ''; }
+
+function blankWeek() { const o = {}; for (const d of WEEK) o[d] = []; return o; }
+function normFlat(raw) {
+  const out = {};
+  for (const d of WEEK) out[d] = Array.isArray(raw && raw[d])
+    ? raw[d].map(cleanTime).filter(Boolean).slice(0, 8) : [];
+  return out;
+}
+function normalizeSched(raw, legacyTime, legacyPerDay) {
+  // New shape: {shorts:{...}, videos:{...}}. Old flat week becomes the
+  // normal-videos track. Missing entirely: build videos from old settings.
+  if (raw && typeof raw === 'object' && (raw.shorts || raw.videos))
+    return {shorts: normFlat(raw.shorts || {}), videos: normFlat(raw.videos || {})};
+  if (raw && typeof raw === 'object') {
+    const flat = normFlat(raw);
+    if (WEEK.some(d => flat[d].length)) return {shorts: blankWeek(), videos: flat};
+  }
+  const hh = parseInt((legacyTime || '18:00').slice(0,2), 10) || 18;
+  const times = [];
+  for (let i = 0; i < Math.min(5, Math.max(1, legacyPerDay || 1)); i++)
+    times.push(String(Math.min(23, hh + i * 2)).padStart(2,'0') + ':00');
+  const vids = {};
+  for (const d of WEEK) vids[d] = times.slice();
+  return {shorts: blankWeek(), videos: vids};
+}
+function fmtHM(t) {
+  const h = parseInt(t.slice(0,2), 10), m = t.slice(3);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + (m === '00' ? '' : ':' + m) + ' ' + ap;
+}
+function renderWeek() {
+  const el = document.getElementById('weekSched');
+  if (!el || !sched) return;
+  el.innerHTML = TRACKS.map(tr => {
+    const rows = WEEK.map(d => {
+      const chips = sched[tr][d].length
+        ? sched[tr][d].map((t, i) => '<span class="wchip">' + fmtHM(t)
+            + ' <b onclick="rmTime(\'' + tr + '\',\'' + d + '\',' + i + ')">&times;</b></span>').join('')
+        : '<span class="off">no posts</span>';
+      return '<div class="wday"><span class="wname">' + WEEKLBL[d] + '</span>'
+        + '<span class="wtimes">' + chips + '</span>'
+        + '<input type="time" id="wt-' + tr + '-' + d + '" value="18:00">'
+        + '<button class="btn ghost wadd" onclick="addTime(\'' + tr + '\',\'' + d + '\')">Add</button></div>';
+    }).join('');
+    return '<h4 style="margin:14px 0 6px">' + TRACKLBL[tr] + '</h4>' + rows;
+  }).join('');
+}
+function scrubSched() {
+  for (const tr of TRACKS) for (const d of WEEK) {
+    sched[tr][d] = (sched[tr][d] || []).map(cleanTime).filter(Boolean);
+  }
+  return sched;
+}
+function addTime(tr, d) {
+  const v = document.getElementById('wt-' + tr + '-' + d).value;
+  if (!v || sched[tr][d].includes(v) || sched[tr][d].length >= 8) return;
+  sched[tr][d].push(v); sched[tr][d].sort(); renderWeek();
+}
+function rmTime(tr, d, i) { sched[tr][d].splice(i, 1); renderWeek(); }
+
+async function switchChannel(id) {
+  await fetch('/api/channels', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({id: parseInt(id, 10)})});
+  location.reload();
+}
+async function saveSettings() {
+  scrubSched();
+  const body = {
+    niche: document.getElementById('niche').value,
+    privacy: document.getElementById('setPrivacy').value,
+    model: document.getElementById('setModel').value,
+    retention: parseInt(document.getElementById('setRetention').value, 10),
+    schedule: sched
+  };
+  await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)});
+  me.niche = body.niche;
+  me.settings = {privacy: body.privacy, model: body.model, retention: body.retention,
+                 schedule: sched};
+  paintAutopilot();
+  document.getElementById('setSaved').textContent = 'Saved';
+  setTimeout(()=>document.getElementById('setSaved').textContent='', 1500);
+  loadPosted();
+}
+
+async function saveWeek() {
+  const stat = document.getElementById('weekSaved');
+  scrubSched(); renderWeek();
+  try {
+    const r = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({schedule: sched})});
+    const d = await r.json().catch(() => null);
+    if (!d || !d.ok) throw new Error((d && d.error) ? d.error : ('server said ' + r.status));
+    if (stat) { stat.textContent = 'Saved.'; stat.className = 'stat ok'; setTimeout(() => stat.textContent = '', 2500); }
+    updateApHint && updateApHint();
+  } catch (e) {
+    if (stat) { stat.textContent = 'Could not save: ' + (e && e.message ? e.message : 'try again') + '.'; stat.className = 'stat err'; }
+  }
+}
+
+async function autoNiche() {
+  const btn = document.getElementById('nicheBtn');
+  const stat = document.getElementById('nicheStat');
+  btn.disabled = true; stat.textContent = 'Reading your whole channel...'; stat.className = 'stat';
+  try {
+    const r = await fetch('/api/niche/auto', {method:'POST'});
+    if (paywallCheck(r.status)) { stat.textContent = ''; btn.disabled = false; return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'failed');
+    document.getElementById('niche').value = d.niche || '';
+    me.niche = d.niche || '';
+    stat.textContent = 'Done. Saved to your account, tweak it any time.'; stat.className = 'stat ok';
+    setTimeout(() => stat.textContent = '', 4000);
+  } catch (e) {
+    stat.textContent = 'Could not read your channel right now.'; stat.className = 'stat err';
+  }
+  btn.disabled = false;
+}
+async function signOut(){ await fetch('/logout',{method:'POST'}); location.reload(); }
+async function subscribe() {
+  const r = await fetch('/api/checkout', {method:'POST'});
+  const d = await r.json();
+  if (d.ok && d.url) location.href = d.url;
+  else alert('Billing is not switched on yet. Email us and we will sort you out.');
+}
+function paywallCheck(status) {
+  if (status === 402) {
+    document.getElementById('paywall').classList.remove('hidden');
+    document.getElementById('paywall').scrollIntoView({behavior:'smooth'});
+    return true;
+  }
+  return false;
+}
+
+function queueCount() {
+  return jobs.filter(j => j.state !== 'done' && j.state !== 'uploaded').length;
+}
+async function fetchBest(force) {
+  if (bestTimes.length && !force) return true;
+  const r = await fetch('/api/analyze', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({queueCount: queueCount()})});
+  if (paywallCheck(r.status)) return false;
+  const d = await r.json();
+  if (!d.ok) return false;
+  bestTimes = d.bestTimes || [];
+  bestHours = d.bestHours || [];
+  bestPerDay = d.postsPerDay || 0;
+  bestWeek = weeksFrom(d) || bestWeek;
+  cleanBest();
+  localStorage.setItem('poster_besttimes' + chanKey,
+    JSON.stringify({times: bestTimes, hours: bestHours, perDay: bestPerDay, week: bestWeek}));
+  return true;
+}
+
+function cleanTime(t) {
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(t || '').trim());
+  if (!m) return null;
+  const hhmm = String(m[1]).padStart(2, '0') + ':' + m[2];
+  if (hhmm === '00:00') return null;   // the analyzer's blank fallback, not a real slot
+  return hhmm;
+}
+function applyWeek(best) {
+  if (!best) return false;
+  const tracks = (best.shorts || best.videos) ? best : {shorts: null, videos: best};
+  let any = false;
+  const next = {};
+  for (const tr of TRACKS) {
+    const week = tracks[tr];
+    if (!week) continue;
+    next[tr] = {};
+    for (const d of WEEK) {
+      const times = [];
+      for (const t of (week[d] || [])) {
+        const c = cleanTime(t);
+        if (c && !times.includes(c)) times.push(c);
+      }
+      times.sort();
+      next[tr][d] = times;
+      if (times.length) any = true;
+    }
+  }
+  if (!any) return false;
+  for (const tr of TRACKS) if (next[tr]) for (const d of WEEK) sched[tr][d] = next[tr][d];
+  renderWeek();
+  return true;
+}
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  return hh + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + ap;
+}
+function weeksFrom(d) {
+  if (!d) return null;
+  if (d.shorts || d.videos) {
+    const w = {shorts: (d.shorts && d.shorts.weekSchedule) || null,
+               videos: (d.videos && d.videos.weekSchedule) || null};
+    return (w.shorts || w.videos) ? w : null;
+  }
+  return d.weekSchedule ? {shorts: null, videos: d.weekSchedule} : null;
+}
+function cleanBest() {
+  const badTxt = /\b12\s*A\.?M\.?\b|\b(1[3-9]|2[0-9])\s*[AP]\.?M\.?\b|\b00:00\b/i;
+  bestTimes = (bestTimes || []).filter(t => t && !badTxt.test(String(t)));
+  bestHours = (bestHours || []).map(Number).filter(h => Number.isInteger(h) && h >= 1 && h <= 23);
+  if (bestWeek && !(bestWeek.shorts || bestWeek.videos))
+    bestWeek = {shorts: null, videos: bestWeek};   // old cached flat shape
+  if (bestWeek) {
+    const out = {shorts: null, videos: null};
+    let any = false;
+    for (const tr of TRACKS) {
+      if (!bestWeek[tr]) continue;
+      const w = {};
+      let trAny = false;
+      for (const d of WEEK) {
+        w[d] = (bestWeek[tr][d] || []).map(cleanTime).filter(Boolean);
+        if (w[d].length) trAny = true;
+      }
+      if (trAny) { out[tr] = w; any = true; }
+    }
+    bestWeek = any ? out : null;
+  }
+}
+function weekLine(week) {
+  if (!week) return '';
+  const names = {mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+  const parts = [];
+  for (const d of WEEK) {
+    const times = (week[d] || []).map(cleanTime).filter(Boolean);
+    if (times.length) parts.push('<b>' + names[d] + '</b> ' + times.map(fmt12).join(', '));
+  }
+  return parts.length ? '<div class="wline">' + parts.join(' &nbsp;&middot;&nbsp; ') + '</div>' : '';
+}
+async function bestFromChannel() {
+  const stat = document.getElementById('weekSaved');
+  const btn = document.getElementById('buildWeekBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Reading your channel...'; }
+  stat.textContent = 'Doing a full read of your channel, this takes up to 30 seconds or so.'; stat.className = 'stat';
+  let ok = false;
+  try { ok = await fetchBest(true); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Build my week from my channel'; } }
+  if (!ok) { stat.textContent = 'Could not read your channel right now.'; stat.className = 'stat err'; return; }
+  if (applyWeek(bestWeek)) {
+    const dS = WEEK.filter(d => sched.shorts[d].length).length;
+    const dV = WEEK.filter(d => sched.videos[d].length).length;
+    stat.textContent = 'Built from your channel: Shorts on ' + dS + (dS === 1 ? ' day' : ' days')
+      + ', normal videos on ' + dV + (dV === 1 ? ' day' : ' days')
+      + ', each from its own numbers. Adjust anything, then hit Save week.';
+    stat.className = 'stat ok';
+    return;
+  }
+  const n = Math.min(5, Math.max(1, bestPerDay || 1));
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    let h = bestHours[i];
+    if (h == null || h === 0) h = (((bestHours[0] || 18)) + i * 2) % 24;
+    if (h === 0) h = 18;
+    const t = String(h).padStart(2, '0') + ':00';
+    if (!times.includes(t)) times.push(t);
+  }
+  times.sort();
+  for (const d of WEEK) { sched.shorts[d] = times.slice(); sched.videos[d] = []; }
+  renderWeek();
+  stat.textContent = 'Not enough evidence per day yet, so Shorts got ' + n
+    + (n === 1 ? ' slot' : ' slots') + ' on every day and normal videos were left for you to place. Trim anything, then hit Save week.';
+  stat.className = 'stat ok';
+}
+
+// ---------- autopilot ----------
+function setAutopilot(mode) {
+  autopilot = mode;
+  localStorage.setItem('poster_ap', mode);
+  paintAutopilot();
+}
+function paintAutopilot() {
+  document.getElementById('apOff').classList.toggle('on', autopilot === 'off');
+  document.getElementById('apNow').classList.toggle('on', autopilot === 'now');
+  document.getElementById('apSched').classList.toggle('on', autopilot === 'sched');
+  const note = document.getElementById('apNote');
+  if (autopilot === 'now') note.textContent = 'Dropped videos generate and post themselves right away.';
+  else if (autopilot === 'sched') {
+    const nS = sched ? WEEK.reduce((a, d) => a + sched.shorts[d].length, 0) : 0;
+    const nV = sched ? WEEK.reduce((a, d) => a + sched.videos[d].length, 0) : 0;
+    note.textContent = (nS + nV)
+      ? 'Dropped videos schedule themselves into the right track: Shorts have '
+        + nS + (nS === 1 ? ' slot' : ' slots') + ' a week, normal videos have '
+        + nV + (nV === 1 ? ' slot' : ' slots') + '. Earliest open slot first.'
+      : 'Add times to Your posting week on the Insights page so autopilot knows when to post.';
+  }
+  else note.textContent = '';
+}
+function claimedSlots() {
+  let c = [];
+  try { c = JSON.parse(localStorage.getItem('poster_claimed' + chanKey) || '[]'); } catch (e) {}
+  const now = Date.now();
+  c = c.filter(iso => { const t = Date.parse(iso); return t && t > now; });
+  localStorage.setItem('poster_claimed' + chanKey, JSON.stringify(c));
+  return new Set(c);
+}
+function nextAutoSlot(fmt) {
+  const tr = fmt === 'short' ? 'shorts' : 'videos';
+  const other = tr === 'shorts' ? 'videos' : 'shorts';
+  let week = (sched && WEEK.some(d => sched[tr][d].length)) ? sched[tr] : null;
+  if (!week) week = (sched && WEEK.some(d => sched[other][d].length)) ? sched[other] : null;
+  const taken = claimedSlots();
+  const pad = n => String(n).padStart(2, '0');
+  const minStart = Date.now() + 15 * 60 * 1000; // YouTube needs a little lead time
+  for (let off = 0; off < 90; off++) {
+    const d = new Date();
+    d.setDate(d.getDate() + off);
+    const times = week ? week[WEEK[(d.getDay() + 6) % 7]] : ['18:00'];
+    for (const t of times) {
+      const slot = new Date(d);
+      slot.setHours(parseInt(t.slice(0,2),10), parseInt(t.slice(3),10), 0, 0);
+      if (slot.getTime() < minStart) continue;
+      const iso = slot.getFullYear() + '-' + pad(slot.getMonth()+1) + '-' + pad(slot.getDate())
+        + 'T' + pad(slot.getHours()) + ':' + pad(slot.getMinutes());
+      if (taken.has(iso)) continue;
+      taken.add(iso);
+      localStorage.setItem('poster_claimed' + chanKey, JSON.stringify([...taken]));
+      return iso;
+    }
+  }
+  return '';
+}
+
+// ---------- multi-video queue ----------
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+drop.onclick = () => fileInput.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); };
+drop.ondragleave = () => drop.classList.remove('hot');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); intake(e.dataTransfer.files); };
+fileInput.onchange = () => { intake(fileInput.files); fileInput.value = ''; };
+
+function intake(fileList) {
+  const files = Array.from(fileList || []).filter(f => f && f.type.startsWith('video'));
+  for (const f of files) {
+    const job = {
+      id: jobSeq++, file: f, frames: [], icon: '', fmtDetected: 'video', fmtChoice: 'auto',
+      publishMode: 'now', fields: {title:'',desc:'',tags:'',tiktok:'',insta:'',tweet:''},
+      state: 'sampling', msg: 'Reading frames...',
+      open: autopilot === 'off' && jobs.length === 0 && files.length === 1,
+      postId: null, schedTime: '', showBest: false,
+      times: [], thumbSel: -1, thumbCustom: null, thumbCustomUrl: '', dup: false
+    };
+    job.dup = jobs.some(o => o.file && o.file.name === f.name && o.file.size === f.size);
+    jobs.push(job);
+    sampleJob(job);
+  }
+  renderQueue();
+}
+
+async function sampleJob(job) {
+  try {
+    const info = await sampleFrames(job.file, 6);
+    job.frames = info.frames;
+    job.times = info.times || [];
+    job.icon = info.frames[0] || '';
+    const vertical = info.height > info.width;
+    job.fmtDetected = (vertical && info.duration <= 180) ? 'short' : 'video';
+    job.state = 'ready';
+    job.msg = info.frames.length + ' frames';
+    if (autopilot !== 'off' && me.status !== 'expired') autopilotRun(job);
+  } catch (e) {
+    job.state = 'error';
+    job.msg = 'Could not read this video. Try an mp4.';
+  }
+  renderQueue();
+}
+
+async function autopilotRun(job) {
+  await generateJob(job.id, true);
+  const j = getJob(job.id);
+  if (!j || j.state !== 'generated') return;
+  if (autopilot === 'sched') { j.publishMode = 'later'; j.schedTime = nextAutoSlot(jobFormat(j)); }
+  else j.publishMode = 'now';
+  renderQueue();
+  uploadJob(j.id);
+}
+
+function jobFormat(job) { return job.fmtChoice === 'auto' ? job.fmtDetected : job.fmtChoice; }
+function stateLabel(job) {
+  const map = {sampling:'reading...', ready:'ready', generating:'writing...',
+               generated:'listed', uploading:'uploading...', uploaded:'posted', error:'error'};
+  return map[job.state] || job.state;
+}
+
+function renderQueue() {
+  const list = document.getElementById('queueList');
+  setBadge('nQueue', jobs.filter(j => j.state !== 'uploaded').length);
+  if (!jobs.length) { list.innerHTML = ''; return; }
+  list.innerHTML = jobs.map(j => {
+    const cls = j.state === 'uploaded' ? 'ok' : (j.state === 'error' ? 'err' : '');
+    const sub = j.publishMode === 'later' && j.schedTime
+      ? 'for ' + fmtWhen(j.schedTime) : stateLabel(j);
+    let html = '<div class="job' + (j.dup ? ' dup' : '') + '" id="job' + j.id + '">'
+      + '<div class="job-head" onclick="toggleJob(' + j.id + ')">'
+      + (j.icon ? '<img class="vthumb" src="' + j.icon + '">' : '<span class="vthumb"></span>')
+      + '<div class="vmid"><div class="vtitle">' + escapeHtml(j.fields.title || j.file.name) + '</div>'
+      + '<div class="vsub"><span class="badge">' + (jobFormat(j) === 'short' ? 'Short' : 'Video') + '</span>'
+      + (j.dup ? '<span class="dupnote">Duplicate</span>' : '') + '</div></div>'
+      + '<div class="vright"><div class="vlabel ' + cls + '">' + stateLabel(j) + '</div>'
+      + (j.publishMode === 'later' && j.schedTime ? '<div class="vtime">' + fmtWhen(j.schedTime) + '</div>' : '')
+      + '</div>'
+      + '<button class="rowx" title="Remove from queue" onclick="event.stopPropagation();removeJob(' + j.id + ')">&times;</button>'
+      + '</div>';
+    if (j.open) html += '<div class="job-body">' + jobBody(j) + '</div>';
+    html += '</div>';
+    return html;
+  }).join('');
+  for (const j of jobs) if (j.open) hydrateJob(j);
+}
+
+function jobBody(j) {
+  let h = '<div class="thumbs">' + j.frames.map(f => '<img src="' + f + '">').join('') + '</div>';
+  h += '<label class="lab">Format</label><div class="seg">'
+    + segBtn(j,'auto','Auto') + segBtn(j,'short','Short') + segBtn(j,'video','Video') + '</div>';
+  h += '<div class="seg-note">' + (j.fmtChoice === 'auto'
+      ? 'Auto detected: ' + (j.fmtDetected === 'short' ? 'looks like a Short.' : 'looks like a regular video.')
+      : 'Manually set to ' + (j.fmtChoice === 'short' ? 'Short.' : 'regular video.')) + '</div>';
+  h += '<div class="row"><button class="btn" id="gen' + j.id + '" onclick="generateJob(' + j.id + ')"'
+    + (j.state === 'sampling' || j.state === 'error' || me.status === 'expired' ? ' disabled' : '')
+    + '>Generate listing</button><span class="stat" id="gstat' + j.id + '">' + escapeHtml(j.msg || '') + '</span></div>';
+  if (j.state === 'generated' || j.state === 'uploading' || j.state === 'uploaded') {
+    h += '<div style="margin-top:14px">'
+      + fld(j,'title','Title','input') + fld(j,'desc','Description','textarea')
+      + fld(j,'tags','Hashtags (space separated, no #)','input')
+      + fld(j,'tiktok','TikTok caption','textarea') + fld(j,'insta','Instagram caption','textarea')
+      + fld(j,'tweet','X post','textarea');
+    h += '<label class="lab">Thumbnail</label>'
+      + '<div class="tframes">'
+      + j.frames.map((f, i) => '<img src="' + f + '" class="' + (j.thumbSel === i ? 'sel' : '')
+          + '" onclick="pickThumbFrame(' + j.id + ',' + i + ')" title="Use this frame">').join('')
+      + (j.thumbCustomUrl
+          ? '<img src="' + j.thumbCustomUrl + '" class="' + (j.thumbSel === -2 ? 'sel' : '') + '" onclick="pickThumbCustomAgain(' + j.id + ')" title="Your image">'
+          : '')
+      + '<div class="tcustom' + (j.thumbSel === -2 && !j.thumbCustomUrl ? ' sel' : '') + '" onclick="pickThumbFile(' + j.id + ')">Upload<br>image</div>'
+      + '</div>'
+      + '<div class="seg-note">' + (j.thumbSel === -1
+          ? 'No thumbnail picked: YouTube chooses one itself.'
+          : (jobFormat(j) === 'short'
+              ? 'Set after upload. Note: the Shorts feed still shows a frame from the video; your thumbnail appears on your channel page and in search.'
+              : 'Set after upload.')) + '</div>';
+  h += '<label class="lab">When to post</label><div class="seg">'
+      + '<button class="' + (j.publishMode==='now'?'on':'') + '" onclick="setJobPublish(' + j.id + ',\'now\')">Post now</button>'
+      + '<button class="' + (j.publishMode==='later'?'on':'') + '" onclick="setJobPublish(' + j.id + ',\'later\')">Schedule</button></div>';
+    if (j.publishMode === 'later') {
+      h += '<div class="row" style="margin-bottom:4px">'
+        + '<input type="datetime-local" id="when' + j.id + '" value="' + (j.schedTime || '') + '" style="margin-bottom:0">'
+        + '<button class="btn ghost mini" onclick="findBest(' + j.id + ')">Find my best time</button></div>';
+      if (j.showBest && bestTimes.length) {
+        h += '<div class="chips" style="margin-bottom:8px">' + bestTimes.map((t, i) =>
+          '<span class="chip" onclick="useBest(' + j.id + ',' + i + ')">' + escapeHtml(t) + '</span>').join('') + '</div>';
+      }
+      h += '<div class="seg-note" style="margin-top:6px">Uploads as private, then YouTube publishes it at that time on its own.</div>';
+    }
+    h += '<div class="row"><button class="btn" id="up' + j.id + '" onclick="uploadJob(' + j.id + ')"'
+      + (j.state === 'uploading' || j.state === 'uploaded' ? ' disabled' : '')
+      + '>Upload to YouTube</button><span class="stat" id="ustat' + j.id + '"></span></div>'
+      + '<div class="bar hidden" id="barw' + j.id + '"><i id="bar' + j.id + '"></i></div>';
+    if (j.state === 'uploaded') {
+      h += '<div><p class="tagline">Uploaded. Cross-post: caption goes to your clipboard, the upload page opens, drop the same file in.</p>'
+        + '<div class="copyrow">'
+        + '<button class="btn ghost mini" onclick="crossPostJob(' + j.id + ',\'tiktok\')">TikTok</button>'
+        + '<button class="btn ghost mini" onclick="crossPostJob(' + j.id + ',\'instagram\')">Instagram</button>'
+        + '<button class="btn ghost mini" onclick="crossPostJob(' + j.id + ',\'x\')">Post to X</button>'
+        + '</div></div>';
+    }
+    h += '</div>';
+  }
+  return h;
+}
+
+function segBtn(j, which, label) {
+  return '<button class="' + (j.fmtChoice === which ? 'on' : '') + '" onclick="setJobFormat('
+    + j.id + ',\'' + which + '\')">' + label + '</button>';
+}
+function fld(j, key, label, kind) {
+  const val = escapeHtml(j.fields[key] || '');
+  const id = 'f_' + key + '_' + j.id;
+  if (kind === 'input')
+    return '<label class="lab">' + label + '</label><input type="text" id="' + id + '" value="' + val + '">';
+  return '<label class="lab">' + label + '</label><textarea id="' + id + '">' + val + '</textarea>';
+}
+function hydrateJob(j) {
+  for (const key of Object.keys(j.fields)) {
+    const el = document.getElementById('f_' + key + '_' + j.id);
+    if (el) el.oninput = () => { j.fields[key] = el.value; };
+  }
+  const when = document.getElementById('when' + j.id);
+  if (when) when.onchange = () => { j.schedTime = when.value; };
+}
+
+function getJob(id) { return jobs.find(j => j.id === id); }
+function toggleJob(id) { const j = getJob(id); if (j) { j.open = !j.open; renderQueue(); } }
+function removeJob(id) { jobs = jobs.filter(j => j.id !== id); renderQueue(); }
+function setJobFormat(id, which) { const j = getJob(id); if (j) { j.fmtChoice = which; renderQueue(); } }
+function setJobPublish(id, mode) {
+  const j = getJob(id); if (!j) return;
+  j.publishMode = mode;
+  if (mode === 'later' && !j.schedTime) {
+    const t = new Date(Date.now() + 24 * 3600 * 1000);
+    t.setMinutes(0, 0, 0);
+    const pad = n => String(n).padStart(2, '0');
+    j.schedTime = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate())
+      + 'T' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+  }
+  renderQueue();
+}
+
+async function findBest(id) {
+  const j = getJob(id); if (!j) return;
+  if (bestTimes.length) { j.showBest = true; renderQueue(); return; }
+  const stat = document.getElementById('ustat' + id);
+  if (stat) { stat.textContent = 'Reading your channel for best times...'; stat.className = 'stat'; }
+  const ok = await fetchBest();
+  if (ok) j.showBest = true;
+  else if (stat) { stat.textContent = 'Could not work out best times right now.'; stat.className = 'stat err'; }
+  renderQueue();
+}
+function useBest(id, i) {
+  const j = getJob(id); if (!j) return;
+  let hour = (bestHours[i] != null ? bestHours[i] : 18);
+  if (!Number.isInteger(hour) || hour < 1 || hour > 23) hour = 18;
+  const t = new Date();
+  if (t.getHours() >= hour - 1) t.setDate(t.getDate() + 1);
+  t.setHours(hour, 0, 0, 0);
+  const pad = n => String(n).padStart(2, '0');
+  j.schedTime = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate())
+    + 'T' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+  renderQueue();
+}
+
+function pickThumbFrame(id, i) {
+  const j = getJob(id); if (!j) return;
+  j.thumbSel = (j.thumbSel === i) ? -1 : i;
+  renderQueue();
+}
+let thumbTargetJob = null;
+function pickThumbFile(id) {
+  thumbTargetJob = id;
+  document.getElementById('thumbFile').click();
+}
+function pickThumbCustomAgain(id) {
+  const j = getJob(id); if (!j) return;
+  j.thumbSel = (j.thumbSel === -2) ? -1 : -2;
+  renderQueue();
+}
+document.getElementById('thumbFile').onchange = function() {
+  const f = this.files[0];
+  this.value = '';
+  const j = getJob(thumbTargetJob);
+  if (!f || !j) return;
+  if (f.size > 2 * 1024 * 1024) { alert('YouTube thumbnails must be under 2 MB.'); return; }
+  j.thumbCustom = f;
+  if (j.thumbCustomUrl) URL.revokeObjectURL(j.thumbCustomUrl);
+  j.thumbCustomUrl = URL.createObjectURL(f);
+  j.thumbSel = -2;
+  renderQueue();
+};
+
+function captureFrameAt(file, time) {
+  // re-grab the chosen frame at full quality for the actual thumbnail
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+    v.onloadedmetadata = () => {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 1280 / (v.videoWidth || 1280));
+      canvas.width = Math.round((v.videoWidth || 1280) * scale);
+      canvas.height = Math.round((v.videoHeight || 720) * scale);
+      v.onseeked = () => {
+        try {
+          canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(b => {
+            URL.revokeObjectURL(url);
+            b ? resolve(b) : reject(new Error('blob'));
+          }, 'image/jpeg', 0.9);
+        } catch (e) { URL.revokeObjectURL(url); reject(e); }
+      };
+      v.currentTime = time;
+    };
+  });
+}
+
+async function setThumbnail(j, videoId, token, setStat) {
+  if (j.thumbSel === -1 || !videoId) return;
+  try {
+    setStat('Setting thumbnail...');
+    let blob;
+    if (j.thumbSel === -2) blob = j.thumbCustom;
+    else blob = await captureFrameAt(j.file, j.times[j.thumbSel] || 0);
+    if (!blob) return;
+    const r = await fetch('https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=' + videoId, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': blob.type || 'image/jpeg' },
+      body: blob
+    });
+    if (r.status === 403) {
+      setStat('Uploaded, but YouTube would not take the thumbnail. Your channel may need phone verification for custom thumbnails.', 'err');
+      return;
+    }
+    if (!r.ok) throw new Error('thumb ' + r.status);
+  } catch (e) {
+    setStat('Uploaded, but the thumbnail did not stick: ' + e.message, 'err');
+  }
+}
+
+async function generateJob(id, silent) {
+  const j = getJob(id); if (!j) return;
+  j.state = 'generating'; j.msg = 'Watching your video and checking your channel...';
+  renderQueue();
+  try {
+    const r = await fetch('/api/generate', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({frames: j.frames, filename: j.file.name, format: jobFormat(j)})});
+    if (paywallCheck(r.status)) { j.state = 'ready'; j.msg = ''; renderQueue(); return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'failed');
+    j.fields.title = d.title || '';
+    j.fields.desc = d.description || '';
+    j.fields.tags = (d.hashtags || []).join(' ');
+    j.fields.tiktok = d.tiktok || '';
+    j.fields.insta = d.instagram || '';
+    j.fields.tweet = d.tweet || '';
+    j.state = 'generated'; j.msg = 'Done';
+  } catch (e) {
+    j.state = 'ready'; j.msg = 'Generation failed, try again.';
+  }
+  renderQueue();
+}
+
+async function uploadJob(id) {
+  const j = getJob(id); if (!j || !j.file) return;
+  const setStat = (t, cls) => {
+    const el = document.getElementById('ustat' + j.id);
+    if (el) { el.textContent = t; el.className = 'stat ' + (cls || ''); }
+  };
+  j.state = 'uploading'; renderQueue(); hydrateJob(j);
+  setStat('Getting permission...');
+  try {
+    const tr = await fetch('/api/youtube-token', {method:'POST'});
+    if (paywallCheck(tr.status)) { j.state = 'generated'; renderQueue(); return; }
+    const td = await tr.json();
+    if (!td.ok) { j.state = 'generated'; renderQueue(); hydrateJob(j);
+      setStat('YouTube needs reconnecting. Sign out and back in.', 'err'); return; }
+    const token = td.accessToken;
+
+    const isShort = jobFormat(j) === 'short';
+    const tags = (j.fields.tags || '').trim().split(/\s+/).filter(Boolean).slice(0, 30);
+    let desc = j.fields.desc || '';
+    if (tags.length) desc += '\n\n' + tags.map(t => '#' + t).join(' ');
+    if (isShort && !/#shorts/i.test(desc)) desc += '\n#Shorts';
+    const defPriv = (me.settings && me.settings.privacy) || 'public';
+    const status = { privacyStatus: defPriv, selfDeclaredMadeForKids: false };
+    let publishAtIso = '';
+    if (j.publishMode === 'later') {
+      const when = j.schedTime ? new Date(j.schedTime) : null;
+      if (!when || isNaN(when) || when.getTime() < Date.now() + 5 * 60 * 1000) {
+        j.state = 'generated'; renderQueue(); hydrateJob(j);
+        setStat('Pick a schedule time at least 5 minutes from now.', 'err'); return;
+      }
+      status.privacyStatus = 'private';
+      publishAtIso = when.toISOString();
+      status.publishAt = publishAtIso;
+    }
+    const meta = {
+      snippet: { title: (j.fields.title || '').slice(0, 100), description: desc,
+                 tags: tags, categoryId: '24' },
+      status: status
+    };
+
+    setStat('Starting upload...');
+    const start = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': j.file.type || 'video/mp4',
+        'X-Upload-Content-Length': String(j.file.size)
+      },
+      body: JSON.stringify(meta)
+    });
+    if (!start.ok) throw new Error('start ' + start.status);
+    const sessionUrl = start.headers.get('Location');
+    if (!sessionUrl) throw new Error('no session');
+
+    const barw = document.getElementById('barw' + j.id);
+    if (barw) barw.classList.remove('hidden');
+    const uploadedId = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', sessionUrl);
+      xhr.setRequestHeader('Content-Type', j.file.type || 'video/mp4');
+      xhr.upload.onprogress = e => {
+        const bar = document.getElementById('bar' + j.id);
+        if (bar && e.lengthComputable)
+          bar.style.width = Math.round(e.loaded / e.total * 100) + '%';
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          let vid = '';
+          try { vid = JSON.parse(xhr.responseText).id || ''; } catch (e) {}
+          resolve(vid);
+        } else reject(new Error('put ' + xhr.status));
+      };
+      xhr.onerror = () => reject(new Error('network'));
+      xhr.send(j.file);
+    });
+
+    await setThumbnail(j, uploadedId, token, setStat);
+
+    try {
+      const pr = await fetch('/api/posts', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({videoId: uploadedId, title: j.fields.title,
+                              format: jobFormat(j), publishAt: publishAtIso})});
+      const pd = await pr.json();
+      if (pd.ok) j.postId = pd.id;
+    } catch (e) {}
+
+    j.state = 'uploaded';
+    renderQueue(); hydrateJob(j);
+    setStat(j.publishMode === 'later'
+      ? 'Uploaded. YouTube will publish it at your scheduled time.' : 'Uploaded to YouTube', 'ok');
+    loadSchedule();
+    loadPosted();
+  } catch (e) {
+    j.state = 'generated'; renderQueue(); hydrateJob(j);
+    setStat('Upload failed: ' + e.message, 'err');
+  }
+}
+
+async function crossPostJob(id, where) {
+  const j = getJob(id); if (!j) return;
+  if (j.postId) {
+    fetch('/api/posts/' + j.postId + '/crossed', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({platform: where})})
+      .then(loadPosted).catch(()=>{});
+  }
+  if (where === 'x') {
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(j.fields.tweet || ''), '_blank');
+    return;
+  }
+  const text = where === 'tiktok' ? j.fields.tiktok : j.fields.insta;
+  try { await navigator.clipboard.writeText(text || ''); } catch (e) {}
+  window.open(where === 'tiktok' ? 'https://www.tiktok.com/upload' : 'https://www.instagram.com/', '_blank');
+}
+
+// ---------- schedule tab ----------
+function hiddenSet() {
+  try { return new Set(JSON.parse(localStorage.getItem('poster_hidden') || '[]')); }
+  catch (e) { return new Set(); }
+}
+function hideFromSchedule(vid) {
+  const s = hiddenSet();
+  s.add(vid);
+  localStorage.setItem('poster_hidden', JSON.stringify([...s].slice(-500)));
+  loadSchedule();
+}
+
+let vdata = {};
+function fmtDuration(iso) {
+  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso || '');
+  if (!m) return '';
+  const h = +(m[1] || 0), mi = +(m[2] || 0), s = +(m[3] || 0);
+  if (h) return h + ':' + String(mi).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  return mi + ':' + String(s).padStart(2, '0');
+}
+function toggleVdetail(id) {
+  const box = document.getElementById('vd-' + id);
+  const row = document.getElementById('vr-' + id);
+  if (!box) return;
+  if (!box.classList.contains('hidden')) {
+    box.classList.add('hidden');
+    if (row) row.classList.remove('open');
+    return;
+  }
+  const v = vdata[id] || {};
+  const when = v.publishAt
+    ? 'Goes out ' + fmtWhen(v.publishAt)
+    : (v.publishedAt ? 'Published ' + fmtWhen(v.publishedAt)
+       + ' (' + new Date(v.publishedAt).toLocaleDateString([], {weekday:'long'}) + ')' : '');
+  const dur = fmtDuration(v.duration);
+  const stat = (label, val) =>
+    '<div class="vd-stat"><b>' + Number(val || 0).toLocaleString() + '</b><span>' + label + '</span></div>';
+  box.innerHTML =
+    '<img src="' + ytThumb(id) + '" onerror="this.style.display=\'none\'">'
+    + '<div class="vd-main">'
+    + '<div class="vd-title">' + escapeHtml(v.title || '') + '</div>'
+    + (v.publishAt ? '' : '<div class="vd-stats">'
+        + stat('views', v.views) + stat('likes', v.likes) + stat('comments', v.comments) + '</div>')
+    + '<div class="vd-meta">' + when
+    + (dur ? ' &middot; ' + dur : '')
+    + (v.privacy ? ' &middot; ' + escapeHtml(v.privacy) : '') + '</div>'
+    + (v.desc ? '<div class="vd-desc">' + escapeHtml(v.desc) + '</div>' : '')
+    + '<div class="row">'
+    + '<a class="btn mini ghost" target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=' + id + '" onclick="event.stopPropagation()">Open on YouTube</a>'
+    + '<a class="btn mini ghost" target="_blank" rel="noopener" href="https://studio.youtube.com/video/' + id + '/analytics" onclick="event.stopPropagation()">Full analytics</a>'
+    + '</div></div>';
+  box.classList.remove('hidden');
+  if (row) row.classList.add('open');
+}
+async function loadSchedule() {
+  const box = document.getElementById('schedList');
+  try {
+    const r = await fetch('/api/schedule');
+    const d = await r.json();
+    if (!d.ok) { box.textContent = 'Could not reach YouTube. Sign out and back in if this keeps up.'; return; }
+    const hidden = hiddenSet();
+    const retention = me.settings ? me.settings.retention : 3;
+    const sched = (d.scheduled || []).filter(v => !hidden.has(v.id));
+    const recent = [];
+    for (const v of (d.recent || [])) {
+      if (hidden.has(v.id)) continue;
+      const left = timeLeft(v.publishedAt, retention);
+      if (left === null) continue;   // aged out of the app, still on YouTube
+      recent.push({v, left});
+    }
+    setBadge('nSched', sched.length);
+    const seen = {};
+    for (const v of sched.concat(recent.map(x => x.v))) {
+      const k = (v.title || '').trim().toLowerCase();
+      seen[k] = (seen[k] || 0) + 1;
+    }
+    const isDup = v => seen[(v.title || '').trim().toLowerCase()] > 1;
+    vdata = {};
+    const rowFor = (v, label, time, sub, labelCls) => {
+      vdata[v.id] = v;
+      return '<div class="vrow click' + (isDup(v) ? ' dup' : '') + '" id="vr-' + v.id + '" onclick="toggleVdetail(\'' + v.id + '\')">'
+      + '<img class="vthumb" src="' + ytThumb(v.id) + '" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+      + '<div class="vmid"><div class="vtitle">' + escapeHtml(v.title) + '</div>'
+      + (isDup(v) ? '<div class="dupnote">Duplicate</div>' : '') + '</div>'
+      + '<div class="vright"><div class="vlabel' + (labelCls ? ' ' + labelCls : '') + '">' + label + '</div>'
+      + '<div class="vtime">' + time + (sub ? ' &middot; ' + sub : '') + '</div></div>'
+      + '<button class="rowx" title="Hide from Poster (stays on YouTube)" onclick="event.stopPropagation();hideFromSchedule(\'' + v.id + '\')">&times;</button>'
+      + '</div><div class="vdetail hidden" id="vd-' + v.id + '"></div>';
+    };
+    const secsOf = v => {
+      const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(v.duration || '');
+      return m ? (+(m[1] || 0)) * 3600 + (+(m[2] || 0)) * 60 + (+(m[3] || 0)) : 0;
+    };
+    const isShortV = v => { const s = secsOf(v); return s > 0 && s < 180; };
+    const rowsFor = (sc, rc) =>
+      sc.map(v => rowFor(v, 'scheduled', fmtWhen(v.publishAt), '', '')).join('')
+      + rc.map(({v, left}) => rowFor(v, v.views + ' views', fmtWhen(v.publishedAt), left, 'good')).join('');
+    const sPart = rowsFor(sched.filter(isShortV), recent.filter(x => isShortV(x.v)));
+    const vPart = rowsFor(sched.filter(v => !isShortV(v)), recent.filter(x => !isShortV(x.v)));
+    let html = '';
+    if (sPart) html += '<h4 style="margin:12px 0 6px">Shorts</h4>' + sPart;
+    if (vPart) html += '<h4 style="margin:12px 0 6px">Normal videos</h4>' + vPart;
+    box.className = html ? '' : 'sched-empty';
+    box.innerHTML = html || 'Nothing scheduled and nothing posted yet. Your first upload will show up here.';
+  } catch (e) {
+    box.textContent = 'Could not load your schedule right now.';
+  }
+}
+
+// ---------- posted tab ----------
+function timeLeft(createdAt, retention) {
+  if (!retention) return '';
+  const expiry = new Date(createdAt).getTime() + retention * 86400000;
+  const ms = expiry - Date.now();
+  if (ms <= 0) return null;
+  const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000);
+  if (d > 0) return d + 'd ' + h + 'h left';
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? h + 'h ' + m + 'm left' : m + 'm left';
+}
+
+async function loadPosted() {
+  const box = document.getElementById('postedList');
+  if (!box) return;
+  try {
+    const r = await fetch('/api/posts');
+    const d = await r.json();
+    if (!d.ok) { box.textContent = 'Could not load.'; return; }
+    const retention = me.settings ? me.settings.retention : 3;
+    const rows = [];
+    for (const p of (d.posts || [])) {
+      const left = timeLeft(p.createdAt, retention);
+      if (left === null) continue;   // aged out
+      rows.push({p, left});
+    }
+    setBadge('nPosted', rows.length);
+    if (!rows.length) {
+      box.className = 'sched-empty';
+      box.textContent = 'Nothing posted through Poster yet.';
+      return;
+    }
+    const tseen = {};
+    for (const {p} of rows) {
+      const k = (p.title || '').trim().toLowerCase();
+      if (k) tseen[k] = (tseen[k] || 0) + 1;
+    }
+    const pDup = p => { const k = (p.title || '').trim().toLowerCase(); return k && tseen[k] > 1; };
+    const groups = {}; const order = [];
+    for (const {p, left} of rows) {
+      const day = p.createdAt ? new Date(p.createdAt).toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) : 'Earlier';
+      if (!groups[day]) { groups[day] = []; order.push(day); }
+      groups[day].push({p, left});
+    }
+    box.className = '';
+    box.innerHTML = order.map((day, di) =>
+      '<details class="day"' + (di === 0 ? ' open' : '') + '><summary><span class="arrow">&#9654;</span>'
+      + day + '<span class="cnt">' + groups[day].length + '</span></summary>'
+      + groups[day].map(({p, left}) =>
+        '<div class="vrow' + (p.videoId ? ' click' : '') + (pDup(p) ? ' dup' : '') + '"'
+        + (p.videoId ? ' onclick="window.open(\'https://www.youtube.com/watch?v=' + p.videoId + '\',\'_blank\')"' : '') + '>'
+        + (p.videoId ? '<img class="vthumb" src="' + ytThumb(p.videoId) + '" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<span class="vthumb"></span>')
+        + '<div class="vmid"><div class="vtitle">' + escapeHtml(p.title || '(untitled)') + '</div>'
+        + '<div class="vsub"><span class="badge">' + (p.format === 'short' ? 'Short' : 'Video') + '</span>'
+        + (pDup(p) ? '<span class="dupnote">Duplicate</span>' : '')
+        + '<span class="xmini">' + xBtn(p,'tiktok','T') + xBtn(p,'instagram','I') + xBtn(p,'x','X') + '</span></div></div>'
+        + '<div class="vright"><div class="vlabel">' + (p.publishAt ? 'scheduled' : 'posted') + ' ' + fmtTime(p.publishAt || p.createdAt) + '</div>'
+        + (left ? '<div class="vtime">' + left + '</div>' : '') + '</div>'
+        + '<button class="rowx" title="Remove" onclick="event.stopPropagation();removePosted(' + p.id + ')">&times;</button>'
+        + '</div>').join('')
+      + '</details>').join('');
+  } catch (e) {
+    box.textContent = 'Could not load.';
+  }
+}
+function xBtn(p, plat, label) {
+  const done = (p.crossed || []).includes(plat);
+  return '<button class="' + (done ? 'done' : '') + '" title="' + plat
+    + (done ? ' - done' : '') + '" onclick="event.stopPropagation();crossFromPosted(' + p.id + ',\'' + plat + '\')">' + label + '</button>';
+}
+async function crossFromPosted(pid, plat) {
+  try {
+    await fetch('/api/posts/' + pid + '/crossed', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({platform: plat})});
+  } catch (e) {}
+  if (plat === 'x') window.open('https://twitter.com/compose/tweet', '_blank');
+  else if (plat === 'tiktok') window.open('https://www.tiktok.com/upload', '_blank');
+  else window.open('https://www.instagram.com/', '_blank');
+  loadPosted();
+}
+async function removePosted(pid) {
+  try { await fetch('/api/posts/' + pid + '/delete', {method:'POST'}); } catch (e) {}
+  loadPosted();
+}
+
+// ---------- ideas tab ----------
+async function loadIdeas() {
+  const box = document.getElementById('ideaList');
+  try {
+    const r = await fetch('/api/ideas');
+    const d = await r.json();
+    if (!d.ok) return;
+    const ideas = d.ideas || [];
+    setBadge('nIdeas', ideas.filter(i => !i.done).length);
+    box.innerHTML = ideas.map(i =>
+      '<div class="idea' + (i.done ? ' done' : '') + '">'
+      + '<input type="checkbox"' + (i.done ? ' checked' : '') + ' onchange="toggleIdea(' + i.id + ')">'
+      + '<span class="txt">' + escapeHtml(i.text) + '</span>'
+      + '<button class="del" title="Delete" onclick="deleteIdea(' + i.id + ')">&times;</button>'
+      + '</div>').join('') || '<div class="sched-empty">No ideas saved yet.</div>';
+  } catch (e) {}
+}
+async function addIdea() {
+  const inp = document.getElementById('ideaText');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  await fetch('/api/ideas', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text})});
+  loadIdeas();
+}
+async function toggleIdea(id) { await fetch('/api/ideas/' + id + '/toggle', {method:'POST'}); loadIdeas(); }
+async function deleteIdea(id) { await fetch('/api/ideas/' + id + '/delete', {method:'POST'}); loadIdeas(); }
+async function generateIdeas() {
+  const btn = document.getElementById('ideaGenBtn');
+  const stat = document.getElementById('ideaStat');
+  btn.disabled = true; stat.textContent = 'Reading your channel and trends...'; stat.className = 'stat';
+  try {
+    const r = await fetch('/api/ideas/generate', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode:'prompts'})});
+    if (paywallCheck(r.status)) { stat.textContent = ''; btn.disabled = false; return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'failed');
+    stat.textContent = 'New prompt added.'; stat.className = 'stat ok';
+    loadIdeas();
+  } catch (e) {
+    stat.textContent = 'Generation failed, try again.'; stat.className = 'stat err';
+  }
+  btn.disabled = false;
+}
+async function getAdvice() {
+  const btn = document.getElementById('advBtn');
+  const stat = document.getElementById('advStat');
+  const out = document.getElementById('adviceOut');
+  btn.disabled = true; stat.textContent = 'Reading your channel...'; stat.className = 'stat';
+  try {
+    const r = await fetch('/api/ideas/generate', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode:'advice'})});
+    if (paywallCheck(r.status)) { stat.textContent = ''; btn.disabled = false; return; }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'failed');
+    out.innerHTML = '<div class="head">' + escapeHtml(d.headline || '') + '</div>'
+      + (d.advice || []).map(a => '<div class="tip"><b>' + escapeHtml(a.title || '') + '</b>'
+        + '<span>' + escapeHtml(a.tip || '') + '</span></div>').join('');
+    out.classList.remove('hidden');
+    stat.textContent = '';
+  } catch (e) {
+    stat.textContent = 'Could not read your channel right now.'; stat.className = 'stat err';
+  }
+  btn.disabled = false;
+}
+
+// ---------- analysis tab ----------
+function renderAnalysis(d) {
+  const out = document.getElementById('anaOut');
+  if (!out || !d) return;
+  bestTimes = d.bestTimes || bestTimes;
+  bestHours = d.bestHours || bestHours;
+  bestPerDay = d.postsPerDay || bestPerDay;
+  bestWeek = weeksFrom(d) || bestWeek;
+  let html = '<p style="margin:0;font-size:14px">' + escapeHtml(d.summary || '') + '</p>';
+  if ((d.sinceLast || []).length)
+    html += '<div class="since"><b>Since last time</b><ul>'
+      + d.sinceLast.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul></div>';
+  if ((d.whatWorks || []).length)
+    html += '<h4>What is working</h4><ul>' + d.whatWorks.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>';
+  const trackBlock = (label, blk) => {
+    if (!blk) return '';
+    const wl = weekLine(blk.weekSchedule);
+    if (!wl) return '';
+    let h = '<h4>' + label + ': when to post, and why</h4>' + wl;
+    if ((blk.weekWhy || []).length)
+      h += '<ul style="margin-top:8px">' + blk.weekWhy.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>';
+    return h;
+  };
+  let wk = trackBlock('Shorts', d.shorts) + trackBlock('Normal videos', d.videos);
+  if (!wk) {
+    const wl = weekLine(d.weekSchedule);
+    if (wl) {
+      wk = '<h4>When to post, and why</h4>' + wl;
+      if ((d.weekWhy || []).length)
+        wk += '<ul style="margin-top:8px">' + d.weekWhy.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>';
+    }
+  }
+  if (wk) {
+    html += wk + '<div class="seg-note" style="margin-top:8px">These are your best times for each format. Head to Your posting week below and hit Build my week from my channel to lock both in.</div>';
+  } else if ((d.bestTimes || []).length) {
+    html += '<h4>When to post</h4><div class="chips">' + d.bestTimes.map(x => '<span class="chip">' + escapeHtml(x) + '</span>').join('') + '</div>';
+  }
+  if ((d.contentIdeas || []).length)
+    html += '<h4>What to make next</h4><ul>' + d.contentIdeas.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>';
+  if (d.analytics === false)
+    html += '<div class="seg-note" style="margin-top:12px;color:var(--bad)">Deeper analytics are waiting: sign out and back in once to grant the new YouTube Analytics permission, then this page runs on real measured numbers.</div>';
+  if (d.savedAt) {
+    const age = Date.now() - new Date(d.savedAt).getTime();
+    const hrs = Math.floor(age / 3600000);
+    html += '<div class="seg-note" style="margin-top:12px">'
+      + (hrs < 1 ? 'Fresh from just now.' : 'From ' + (hrs < 24 ? hrs + (hrs === 1 ? ' hour' : ' hours') : Math.floor(hrs / 24) + (hrs < 48 ? ' day' : ' days')) + ' ago.')
+      + ' Poster feeds this into every listing it writes.</div>';
+  }
+  out.innerHTML = html;
+  out.classList.remove('hidden');
+}
+let analyzing = false;
+async function analyzeChannel(auto) {
+  if (analyzing) return;
+  analyzing = true;
+  const btn = document.getElementById('anaBtn');
+  const stat = document.getElementById('anaStat');
+  if (btn) btn.disabled = true;
+  if (stat) { stat.textContent = auto ? 'Updating with fresh numbers...' : 'Reading your channel...'; stat.className = 'stat'; }
+  try {
+    const r = await fetch('/api/analyze', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({queueCount: queueCount()})});
+    if (paywallCheck(r.status)) { if (stat) stat.textContent = ''; }
+    else {
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'failed');
+      d.savedAt = new Date().toISOString();
+      me.analysis = d;
+      localStorage.setItem('poster_besttimes', JSON.stringify({times: d.bestTimes || [], hours: d.bestHours || [], perDay: d.postsPerDay || 0, week: d.weekSchedule || null}));
+      renderAnalysis(d);
+      if (stat) stat.textContent = '';
+    }
+  } catch (e) {
+    if (stat) {
+      stat.textContent = auto ? 'Could not update just now. Showing your last numbers.' : 'Analysis failed, try again.';
+      stat.className = 'stat err';
+    }
+  }
+  if (btn) btn.disabled = false;
+  analyzing = false;
+}
+
+
+// ---------- frame sampling ----------
+function sampleFrames(file, count) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+    const out = [];
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+    v.onloadedmetadata = () => {
+      const dur = v.duration && isFinite(v.duration) ? v.duration : 0;
+      if (!dur) { URL.revokeObjectURL(url); reject(new Error('duration')); return; }
+      const times = [];
+      for (let i = 0; i < count; i++) times.push(dur * (i + 0.5) / count);
+      const meta = { duration: dur, width: v.videoWidth || 0, height: v.videoHeight || 0, times: times };
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 640 / (v.videoWidth || 640));
+      canvas.width = Math.round((v.videoWidth || 640) * scale);
+      canvas.height = Math.round((v.videoHeight || 360) * scale);
+      const ctx = canvas.getContext('2d');
+      let i = 0;
+      v.onseeked = () => {
+        try {
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          out.push(canvas.toDataURL('image/jpeg', 0.7));
+        } catch (e) {}
+        i++;
+        if (i < times.length) v.currentTime = times[i];
+        else { URL.revokeObjectURL(url); resolve({frames: out, ...meta}); }
+      };
+      v.currentTime = times[0];
+    };
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
